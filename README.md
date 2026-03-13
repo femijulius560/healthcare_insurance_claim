@@ -1,32 +1,73 @@
-# Insurance Claim Prediction & Interactive Dashboard
+# Insurance Claim Prediction and Fraud Analytics Dashboard
 
 ## Overview
 
-A machine learning pipeline that predicts healthcare insurance claims with an interactive Streamlit dashboard for exploring predictions and analyzing claim patterns.
+This project combines machine learning claim prediction with an interactive Streamlit dashboard for:
 
-## Features
+1. Quick single-record prediction,
+2. Batch prediction with KPI and visual analytics, and
+3. Insurance fraud investigation.
 
-- **Data Pipeline**: Cleaning, EDA, and feature engineering
-- **Predictive Model**: Random Forest with bias correction and tail calibration
-- **Interactive Dashboard**: Single prediction, Batch predictions, filtering, KPIs, and visualizations
-- **Risk Detection**: Identifies high-risk patient profiles
+The model is a Random Forest pipeline with log-target handling and calibration logic to improve upper-tail claim estimates.
+
+## Dashboard Tabs
+
+### 1. Single Prediction
+
+- Fast prediction for one profile.
+- No filters and no charts.
+
+### 2. Batch Analytics
+
+- CSV upload and model scoring.
+- Optional tail calibration handling.
+- Interactive filters for region, smoker, gender, age, and BMI.
+- KPI cards, trend visuals, donut chart, and heatmap.
+- Download filtered prediction output as CSV.
+
+### 3. Insurance Fraud Detection
+
+- Requires CSV with actual claim column (`claim`).
+- If `claim` is missing, app shows an informational warning.
+- Fraud rule used:
+
+	Actual Claim > 3 x Predicted Claim
+
+- Includes:
+	- Suspicious Claims by Region (count + total fraud gap),
+	- Predicted vs Actual scatter plot,
+	- Top Suspicious Claims table,
+	- Fraud Investigation table.
+- Includes CSV export for:
+	- suspicious claims,
+	- fraud investigation table.
 
 ## Dataset
 
-This project uses healthcare insurance data from Kaggle. The dataset contains 1,340 records with demographic and health information to predict insurance claim costs.
+The project uses healthcare insurance claim data with demographic and health variables.
 
-**Features:**
-- Age, BMI, Blood Pressure, Children, Gender, Smoking Status, Diabetes Status, Region
+Core features:
 
-**Target Variable:** Insurance claim cost (continuous)
+- age
+- bmi
+- bloodpressure
+- children
+- gender
+- smoker
+- diabetic
+- region
+
+Target:
+
+- claim (insurance claim cost)
 
 ## Quick Start
 
 ### Installation
 
 ```bash
-git clone <repo-url>
-cd project
+git clone <https://github.com/femijulius560/healthcare_insurance_claim.git>
+cd "insurance claim analysis"
 python -m venv .venv
 # Windows
 .venv\Scripts\activate
@@ -43,34 +84,26 @@ streamlit run app.py
 
 ## Project Structure
 
+```text
+insurance claim analysis/
+|-- app.py
+|-- claim_analysis.ipynb
+|-- insurance_claim_raw.csv
+|-- insurance_claim_cleaned.csv
+|-- predictions_full_report.csv
+|-- rf_pipeline.pkl
+|-- static_dashboard.png
+|-- requirements.txt
+`-- README.md
 ```
-project/
-├── README.md
-├── app.py
-├── claim_analysis.ipynb
-├── insurance_claim_raw.csv
-├── insurance_claim_cleaned.csv
-├── predictions_full_report.csv
-├── rf_pipeline.pkl
-├── requirements.txt
-└── .gitignore
-```
 
-## Workflow
+## Tech Stack
 
-1. **Data Cleaning**: Remove outliers, handle missing values, feature engineering
-2. **EDA**: Analyze claim patterns across demographics and health features
-3. **Modeling**: Random Forest with log transformation and hyperparameter tuning
-4. **Calibration**: Bias correction and tail calibration for extreme claims
-5. **Dashboard**: Batch/single predictions, filtering, KPIs, and visualizations
-
-## Technologies
-
-Python, Pandas, NumPy, Scikit-Learn, Plotly, Streamlit, Joblib
-
-## Key Insights
-
-- Smokers have significantly higher claims
-- High BMI correlates with increased claims
-- Older age groups show rising costs
+- Python
+- Pandas
+- NumPy
+- Scikit-Learn
+- Plotly
+- Streamlit
+- Joblib
 
