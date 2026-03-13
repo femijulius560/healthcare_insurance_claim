@@ -42,6 +42,28 @@ The model is a Random Forest pipeline with log-target handling and calibration l
 	- suspicious claims,
 	- fraud investigation table.
 
+## Dashboard Screenshots
+
+### Batch Analytics
+
+Overview and main filtering workflow:
+
+![Batch Overview](reports/figures/streamlit/batch/batch-01-overview.png)
+
+![Batch Filters](reports/figures/streamlit/batch/batch-02-filters.png)
+
+![Batch Upload Results](reports/figures/streamlit/batch/batch-03-upload-results-a.png)
+
+### Insurance Fraud Detection
+
+Fraud review flow with flagged output and investigation views:
+
+![Fraud Overview](reports/figures/streamlit/fraud/fraud-01-overview.png)
+
+![Fraud Flagged Results](reports/figures/streamlit/fraud/fraud-02-flagged-results-a.png)
+
+![Fraud Investigation Table](reports/figures/streamlit/fraud/fraud-05-full-investigation-table.png)
+
 ## Dataset
 
 The project uses healthcare insurance claim data with demographic and health variables.
@@ -99,7 +121,20 @@ insurance claim analysis/
 |   `-- claim_analysis.ipynb
 |-- reports/
 |   `-- figures/
-|       `-- static_dashboard.png
+|       |-- static_dashboard.png
+|       `-- streamlit/
+|           |-- batch/
+|           |   |-- batch-01-overview.png
+|           |   |-- batch-02-filters.png
+|           |   |-- batch-03-upload-results-a.png
+|           |   |-- batch-04-upload-results-b.png
+|           |   `-- batch-05-upload-results-c.png
+|           `-- fraud/
+|               |-- fraud-01-overview.png
+|               |-- fraud-02-flagged-results-a.png
+|               |-- fraud-03-flagged-results-b.png
+|               |-- fraud-04-top-suspicious-table.png
+|               `-- fraud-05-full-investigation-table.png
 |-- requirements.txt
 `-- README.md
 ```
