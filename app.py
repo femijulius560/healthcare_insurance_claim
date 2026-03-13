@@ -25,9 +25,8 @@ except NameError:
 MODEL_PATH = os.path.join(SCRIPT_DIR, "models", "rf_pipeline.pkl")
 if not os.path.exists(MODEL_PATH):
     alternative_paths = [
-        os.path.join(SCRIPT_DIR, "rf_pipeline.pkl"),
+        os.path.join(os.getcwd(), "models", "rf_pipeline.pkl"),
         "models/rf_pipeline.pkl",
-        "rf_pipeline.pkl"
     ]
     for alt_path in alternative_paths:
         if os.path.exists(alt_path):

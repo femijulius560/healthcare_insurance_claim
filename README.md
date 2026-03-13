@@ -87,12 +87,19 @@ streamlit run app.py
 ```text
 insurance claim analysis/
 |-- app.py
-|-- claim_analysis.ipynb
-|-- insurance_claim_raw.csv
-|-- insurance_claim_cleaned.csv
-|-- predictions_full_report.csv
-|-- rf_pipeline.pkl
-|-- static_dashboard.png
+|-- data/
+|   |-- raw/
+|   |   `-- insurance_claim_raw.csv
+|   `-- processed/
+|       |-- insurance_claim_cleaned.csv
+|       `-- predictions_full_report.csv
+|-- models/
+|   `-- rf_pipeline.pkl
+|-- notebooks/
+|   `-- claim_analysis.ipynb
+|-- reports/
+|   `-- figures/
+|       `-- static_dashboard.png
 |-- requirements.txt
 `-- README.md
 ```
