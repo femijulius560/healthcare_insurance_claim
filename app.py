@@ -3,6 +3,8 @@ import pandas as pd
 import numpy as np
 import joblib
 import os
+import uuid
+from datetime import datetime
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -59,6 +61,62 @@ def apply_tail_adjustment(pred_claims, quantile, multiplier):
         adjusted[tail_mask] = adjusted[tail_mask] * multiplier
     return adjusted
 
+
+def build_single_input_df(age, bmi, bloodpressure, children, gender, smoker, diabetic, region):
+    return pd.DataFrame({
+        "age": [age],
+        "bmi": [bmi],
+        "bloodpressure": [bloodpressure],
+        "children": [children],
+        "gender": [gender],
+        "smoker": [smoker],
+        "diabetic": [diabetic],
+        "region": [region]
+    })
+
+
+def compute_single_shap_contributions(pipeline, features_df):
+    shap_module = __import__("shap")
+
+    if not hasattr(pipeline, "named_steps"):
+        raise ValueError("Loaded model is not a sklearn Pipeline with named_steps.")
+
+    estimator = pipeline.named_steps[list(pipeline.named_steps)[-1]]
+    X_proc = pipeline[:-1].transform(features_df)
+
+    # Target the ColumnTransformer step directly to get post-encoding feature names;
+    # avoids hitting the FunctionTransformer normalizer which has no get_feature_names_out.
+    col_transformer = pipeline.named_steps.get("preprocessor", None)
+    if col_transformer is not None and hasattr(col_transformer, "get_feature_names_out"):
+        feature_names = col_transformer.get_feature_names_out().tolist()
+    else:
+        feature_names = [f"feature_{i}" for i in range(X_proc.shape[1])]
+
+    explainer = shap_module.TreeExplainer(estimator)
+    shap_values = explainer.shap_values(X_proc)
+
+    if isinstance(shap_values, list):
+        shap_row = np.array(shap_values[0])[0]
+    else:
+        shap_row = np.array(shap_values)[0]
+
+    # Convert log-space SHAP values to dollar contributions.
+    # Model predicts log1p(claim), so for each feature i:
+    #   dollar_i = exp(log_pred) * smear * (1 - exp(-shap_i))
+    # This isolates each feature's marginal dollar effect on the final prediction.
+    log_pred = pipeline.predict(features_df)[0]
+    smear_factor = getattr(pipeline, "smearing_factor_", 1.0)
+    dollar_contribs = np.exp(log_pred) * smear_factor * (1 - np.exp(-shap_row))
+
+    shap_df = pd.DataFrame({
+        "feature": feature_names,
+        "shap_value": shap_row,
+        "dollar_contribution": dollar_contribs
+    })
+    shap_df["abs_contrib"] = shap_df["dollar_contribution"].abs()
+    shap_df = shap_df.sort_values("abs_contrib", ascending=False)
+    return shap_df
+
 model = joblib.load(MODEL_PATH)  # load the trained model pipeline
 
 
@@ -68,7 +126,7 @@ st.markdown("<p style='text-align:center;'>Upload your clean dataset, filter, pr
 st.markdown("---")
 
 tab_single, tab_batch, tab_fraud = st.tabs([
-    "📌 Single Prediction",
+    "📌 Single Prediction & Explainability",
     "📂 Batch Analytics",
     "🚨 Fraud Detection System"
 ])
@@ -76,6 +134,21 @@ tab_single, tab_batch, tab_fraud = st.tabs([
 with tab_single:
     st.subheader(" Flash Prediction")
     st.caption("Fast claim estimate for one profile.")
+
+    if "session_predictions" not in st.session_state:
+        st.session_state.session_predictions = pd.DataFrame(columns=[
+            "prediction_id",
+            "age",
+            "bmi",
+            "bloodpressure",
+            "children",
+            "gender",
+            "smoker",
+            "diabetic",
+            "region",
+            "predicted_claim",
+            "timestamp"
+        ])
 
     age = st.number_input("Age", min_value=0, max_value=120, value=30, key="single_age")
     bmi = st.number_input("BMI", min_value=5.0, max_value=70.0, value=25.0, format="%.1f", key="single_bmi")
@@ -87,18 +160,194 @@ with tab_single:
     region = st.selectbox("Region", ["northeast", "northwest", "southeast", "southwest"], key="single_region")
 
     if st.button("Predict Claim", key="single_predict_btn"):
-        input_df = pd.DataFrame({
-            "age": [age],
-            "bmi": [bmi],
-            "bloodpressure": [bloodpressure],
-            "children": [children],
-            "gender": [gender],
-            "smoker": [smoker],
-            "diabetic": [diabetic],
-            "region": [region]
-        })
+        input_df = build_single_input_df(age, bmi, bloodpressure, children, gender, smoker, diabetic, region)
         pred_claim = predict_claims_from_log_model(model, input_df)[0]
+
+        prediction_id = str(uuid.uuid4())
+        prediction_ts = datetime.now().isoformat(timespec="seconds")
+        profile_record = {
+            "prediction_id": prediction_id,
+            "age": age,
+            "bmi": bmi,
+            "bloodpressure": bloodpressure,
+            "children": children,
+            "gender": gender,
+            "smoker": smoker,
+            "diabetic": diabetic,
+            "region": region,
+            "predicted_claim": float(pred_claim),
+            "timestamp": prediction_ts
+        }
+
+        st.session_state.latest_prediction = profile_record
+        st.session_state.latest_input_df = input_df.copy()
+        st.session_state.sc_age = int(age)
+        st.session_state.sc_bmi = float(bmi)
+        st.session_state.sc_bp = int(bloodpressure)
+        st.session_state.sc_children = int(children)
+        st.session_state.sc_gender = str(gender)
+        st.session_state.sc_smoker = str(smoker)
+        st.session_state.sc_diabetic = str(diabetic)
+        st.session_state.sc_region = str(region)
+        new_pred_df = pd.DataFrame([profile_record])
+        if st.session_state.session_predictions.empty:
+            st.session_state.session_predictions = new_pred_df
+        else:
+            st.session_state.session_predictions = pd.concat(
+                [st.session_state.session_predictions, new_pred_df],
+                ignore_index=True
+            )
+        # Reset scenario table whenever the baseline changes
+        st.session_state.scenario_comparison = pd.DataFrame(columns=[
+            "scenario", "age", "bmi", "bloodpressure", "children",
+            "gender", "smoker", "diabetic", "region", "predicted_claim", "delta_vs_current"
+        ])
+
         st.success(f"💰 Predicted Insurance Claim: **${pred_claim:,.2f}**")
+        st.caption(f"Prediction ID: {prediction_id}")
+
+    if "latest_prediction" in st.session_state:
+
+        st.markdown("### SHAP Explainability (Single Prediction)")
+        try:
+            shap_df = compute_single_shap_contributions(model, st.session_state.latest_input_df)
+            shap_display = shap_df[["feature", "shap_value", "dollar_contribution"]].copy()
+            shap_display["shap_value"] = shap_display["shap_value"].round(4)
+            shap_display["dollar_contribution"] = shap_display["dollar_contribution"].apply(lambda v: f"${v:+,.2f}")
+            shap_display.columns = ["Feature", "SHAP Value (log-space)", "$ Contribution to Predicted Claim"]
+            st.dataframe(shap_display, width="stretch", hide_index=True)
+
+            top_shap = shap_df.head(12).sort_values("dollar_contribution")
+            top_shap["direction"] = np.where(top_shap["dollar_contribution"] >= 0, "Adds to claim", "Reduces claim")
+            fig_shap = px.bar(
+                top_shap,
+                x="dollar_contribution",
+                y="feature",
+                color="direction",
+                orientation="h",
+                title="Feature Dollar Contributions to Predicted Claim",
+                color_discrete_map={"Adds to claim": "#DC2626", "Reduces claim": "#2563EB"}
+            )
+            fig_shap.update_layout(
+                yaxis_title="",
+                xaxis_title="$ Contribution",
+                xaxis_tickprefix="$",
+                xaxis_separatethousands=True,
+                showlegend=False
+            )
+            st.plotly_chart(fig_shap, width="stretch")
+        except Exception as ex:
+            st.warning(f"SHAP explainability is unavailable for this model pipeline: {ex}")
+
+        st.markdown("### Scenario Simulation (Health / Lifestyle Changes)")
+        base_profile = st.session_state.latest_prediction
+        st.info(
+            f"Baseline ({base_profile['prediction_id']}): **${base_profile['predicted_claim']:,.2f}** — "
+            f"edit inputs below and click *Add Scenario* to record each variation."
+        )
+
+        if "scenario_comparison" not in st.session_state:
+            st.session_state.scenario_comparison = pd.DataFrame(columns=[
+                "scenario", "age", "bmi", "bloodpressure", "children",
+                "gender", "smoker", "diabetic", "region", "predicted_claim", "delta_vs_current"
+            ])
+
+        # Widget values are controlled by session_state keys to avoid
+        # "default value + Session State" warnings in Streamlit.
+        st.session_state.setdefault("sc_age", int(base_profile["age"]))
+        st.session_state.setdefault("sc_bmi", float(base_profile["bmi"]))
+        st.session_state.setdefault("sc_bp", int(base_profile["bloodpressure"]))
+        st.session_state.setdefault("sc_children", int(base_profile["children"]))
+        st.session_state.setdefault("sc_gender", str(base_profile["gender"]))
+        st.session_state.setdefault("sc_smoker", str(base_profile["smoker"]))
+        st.session_state.setdefault("sc_diabetic", str(base_profile["diabetic"]))
+        st.session_state.setdefault("sc_region", str(base_profile["region"]))
+
+        sc1, sc2, sc3, sc4 = st.columns(4)
+        with sc1:
+            s_age = st.number_input("Age", min_value=0, max_value=120, key="sc_age")
+            s_bmi = st.number_input("BMI", min_value=5.0, max_value=70.0, format="%.1f", key="sc_bmi")
+        with sc2:
+            s_bp = st.number_input("Blood Pressure", min_value=50, max_value=250, key="sc_bp")
+            s_children = st.number_input("Children", min_value=0, max_value=10, key="sc_children")
+        with sc3:
+            s_gender = st.selectbox("Gender", ["female", "male"], key="sc_gender")
+            s_smoker = st.selectbox("Smoker", ["no", "yes"], key="sc_smoker")
+        with sc4:
+            s_diabetic = st.selectbox("Diabetic", ["no", "yes"], key="sc_diabetic")
+            s_region = st.selectbox(
+                "Region", ["northeast", "northwest", "southeast", "southwest"],
+                key="sc_region"
+            )
+
+        btn_col, clear_col = st.columns([2, 1])
+        with btn_col:
+            add_scenario = st.button("➕ Add Scenario to Comparison", key="single_add_scenario")
+        with clear_col:
+            clear_scenarios = st.button("🗑 Clear All Scenarios", key="single_clear_scenarios")
+
+        if add_scenario:
+            sc_input_df = build_single_input_df(s_age, s_bmi, s_bp, s_children, s_gender, s_smoker, s_diabetic, s_region)
+            sc_pred = predict_claims_from_log_model(model, sc_input_df)[0]
+            sc_num = len(st.session_state.scenario_comparison) + 1
+            new_row = {
+                "scenario": f"Scenario {sc_num}",
+                "age": s_age, "bmi": s_bmi, "bloodpressure": s_bp, "children": s_children,
+                "gender": s_gender, "smoker": s_smoker, "diabetic": s_diabetic, "region": s_region,
+                "predicted_claim": float(sc_pred),
+                "delta_vs_current": float(sc_pred) - float(base_profile["predicted_claim"])
+            }
+            new_sc_df = pd.DataFrame([new_row])
+            if st.session_state.scenario_comparison.empty:
+                st.session_state.scenario_comparison = new_sc_df
+            else:
+                st.session_state.scenario_comparison = pd.concat(
+                    [st.session_state.scenario_comparison, new_sc_df],
+                    ignore_index=True
+                )
+            delta = float(sc_pred) - float(base_profile["predicted_claim"])
+            st.success(f"Scenario {sc_num} added — Predicted: **${sc_pred:,.2f}** (Δ ${delta:+,.2f})")
+
+        if clear_scenarios:
+            st.session_state.scenario_comparison = pd.DataFrame(columns=[
+                "scenario", "age", "bmi", "bloodpressure", "children",
+                "gender", "smoker", "diabetic", "region", "predicted_claim", "delta_vs_current"
+            ])
+
+        if not st.session_state.scenario_comparison.empty:
+            st.markdown("#### Scenario Comparison Table")
+            baseline_for_display = {
+                "scenario": "Baseline",
+                "age": base_profile["age"], "bmi": base_profile["bmi"],
+                "bloodpressure": base_profile["bloodpressure"], "children": base_profile["children"],
+                "gender": base_profile["gender"], "smoker": base_profile["smoker"],
+                "diabetic": base_profile["diabetic"], "region": base_profile["region"],
+                "predicted_claim": float(base_profile["predicted_claim"]),
+                "delta_vs_current": 0.0
+            }
+            display_comparison = pd.concat(
+                [pd.DataFrame([baseline_for_display]), st.session_state.scenario_comparison],
+                ignore_index=True
+            )
+            st.dataframe(display_comparison, width="stretch", hide_index=True)
+            st.download_button(
+                "📥 Download Scenario Comparison (CSV)",
+                data=display_comparison.to_csv(index=False).encode("utf-8"),
+                file_name=f"scenario_comparison_{base_profile['prediction_id']}.csv",
+                mime="text/csv",
+                key="single_scenario_download"
+            )
+
+    st.markdown("---")
+    st.markdown("### Session Prediction History")
+    st.dataframe(st.session_state.session_predictions, width="stretch", hide_index=True)
+    st.download_button(
+        "📥 Download Session Predictions (CSV)",
+        data=st.session_state.session_predictions.to_csv(index=False).encode("utf-8"),
+        file_name="session_predictions.csv",
+        mime="text/csv",
+        key="single_session_download"
+    )
 
 with tab_batch:
     st.subheader("Batch Prediction, Filters, and KPI Dashboard")
