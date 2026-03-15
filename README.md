@@ -4,7 +4,7 @@
 
 This project combines machine learning claim prediction with an interactive Streamlit dashboard for:
 
-1. Quick single-record prediction,
+1. Single-record prediction with SHAP explainability and scenario simulation,
 2. Batch prediction with KPI and visual analytics, and
 3. Insurance fraud investigation.
 
@@ -12,10 +12,23 @@ The model is a Random Forest pipeline with log-target handling and calibration l
 
 ## Dashboard Tabs
 
-### 1. Single Prediction
+### 1. Single Prediction & Explainability
 
-- Fast prediction for one profile.
-- No filters and no charts.
+- Fast claim estimate for one patient profile.
+- Every prediction generates a **unique UUID prediction ID** with a timestamp.
+- Full prediction record stored with all input features, predicted claim, and timestamp.
+- **SHAP Explainability** per prediction:
+  - Log-space SHAP values and dollar contributions computed via `TreeExplainer`.
+  - Feature contribution table showing SHAP value (log-space) and `$` contribution to the predicted claim.
+  - Horizontal bar chart with dollar contribution per feature, colour-coded by direction.
+- **Scenario Simulation** (health / lifestyle changes):
+  - Single editable form pre-filled with the active prediction's values.
+  - Each run appends a new row to a cumulative comparison table.
+  - Comparison table includes a Baseline row + all added scenarios with `delta_vs_current`.
+  - Clear All Scenarios button to reset between experiments.
+  - Download scenario comparison as CSV.
+- **Session Prediction History** accumulates all predictions made during the session.
+- Export any individual prediction profile or the full session history as CSV.
 
 ### 2. Batch Analytics
 
@@ -148,4 +161,5 @@ insurance claim analysis/
 - Plotly
 - Streamlit
 - Joblib
+- SHAP
 
