@@ -63,15 +63,15 @@ The model is a Random Forest pipeline with log-target handling and calibration l
 
 SHAP-driven explainability and scenario simulation for single predictions:
 
-![Flash Prediction Overview (a)](reports/figures/streamlit/flash/flash_prediction overview (a).png)
+![Flash Prediction Overview (a)](reports/figures/streamlit/flash/flash-01-prediction-overview-a.png)
 
-![Flash Prediction Overview (b)](reports/figures/streamlit/flash/flash_prediction overview (b).png)
+![Flash Prediction Overview (b)](reports/figures/streamlit/flash/flash-02-prediction-overview-b.png)
 
-![Flash Prediction Overview (c)](reports/figures/streamlit/flash/flash_prediction overview (c).png)
+![Flash SHAP Explainability](reports/figures/streamlit/flash/flash-03-prediction-overview-c.png)
 
-![Flash Prediction Overview (d)](reports/figures/streamlit/flash/flash_prediction overview (d).png)
+![Flash Scenario Simulation (d)](reports/figures/streamlit/flash/flash-04-prediction-overview-d.png)
 
-![Flash Prediction Overview (e)](reports/figures/streamlit/flash/flash_prediction overview (e).png)
+![Flash Scenario Simulation (e)](reports/figures/streamlit/flash/flash-05-prediction-overview-e.png)
 
 ### Batch Analytics
 
@@ -158,6 +158,12 @@ insurance claim analysis/
 |           |   |-- batch-03-upload-results-a.png
 |           |   |-- batch-04-upload-results-b.png
 |           |   `-- batch-05-upload-results-c.png
+|           |-- flash/
+|           |   |-- flash-01-prediction-overview-a.png
+|           |   |-- flash-02-prediction-overview-b.png
+|           |   |-- flash-03-prediction-overview-c.png
+|           |   |-- flash-04-prediction-overview-d.png
+|           |   `-- flash-05-prediction-overview-e.png
 |           `-- fraud/
 |               |-- fraud-01-overview.png
 |               |-- fraud-02-flagged-results-a.png
