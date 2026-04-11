@@ -57,6 +57,20 @@ The model is a Random Forest pipeline with log-target handling and calibration l
 
 ## Dashboard Screenshots
 
+### Flash Prediction & Scenario Simulation
+
+SHAP-driven explainability and scenario simulation for single predictions:
+
+![Flash Prediction Overview (a)](reports/figures/streamlit/flash/flash_prediction overview (a).png)
+
+![Flash Prediction Overview (b)](reports/figures/streamlit/flash/flash_prediction overview (b).png)
+
+![Flash Prediction Overview (c)](reports/figures/streamlit/flash/flash_prediction overview (c).png)
+
+![Flash Prediction Overview (d)](reports/figures/streamlit/flash/flash_prediction overview (d).png)
+
+![Flash Prediction Overview (e)](reports/figures/streamlit/flash/flash_prediction overview (e).png)
+
 ### Batch Analytics
 
 Overview and main filtering workflow:
