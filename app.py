@@ -745,3 +745,11 @@ with tab_fraud:
                 mime="text/csv",
                 key="fraud_export_investigation"
             )
+
+st.markdown("---")
+st.markdown("""
+<div style='text-align: center; padding: 20px; color: #64748b; font-size: 14px;'>
+    <p>ClaimIQ © 2026 | Insurance Claim Prediction & Fraud Intelligence System</p>
+    <p style='margin-top: 10px; font-size: 12px;'>Powered by Random Forest ML | Built with Streamlit</p>
+</div>
+""", unsafe_allow_html=True)
