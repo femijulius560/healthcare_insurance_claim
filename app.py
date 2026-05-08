@@ -12,7 +12,7 @@ from plotly.subplots import make_subplots
 
 # Page Config
 st.set_page_config(
-    page_title="💎 Interactive Insurance Claim Dashboard",
+    page_title="ClaimIQ",
     layout="wide",
     page_icon="💰"
 )
@@ -120,10 +120,32 @@ def compute_single_shap_contributions(pipeline, features_df):
 model = joblib.load(MODEL_PATH)  # load the trained model pipeline
 
 
-# Header
-st.markdown("<h1 style='text-align:center; color:#4B0082;'>💎 Healthcare Insurance Claim Dashboard</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center;'>Upload your clean dataset, filter, predict, and explore claims interactively.</p>", unsafe_allow_html=True)
-st.markdown("---")
+# Header styling
+st.markdown("""
+<style>
+    .header-container {
+        text-align: center;
+        padding: 20px;
+    }
+    .header-container h1 {
+        margin: 0;
+        font-size: 42px;
+        font-weight: 800;
+        color: #1e293b;
+    }
+    .header-container p {
+        margin: 8px 0 0 0;
+        font-size: 16px;
+        color: #64748b;
+        font-weight: 500;
+    }
+</style>
+<div class="header-container">
+    <h1>💰 ClaimIQ</h1>
+    <p>Insurance Claim Prediction & Fraud Intelligence System</p>
+</div>
+""", unsafe_allow_html=True)
+st.markdown("")
 
 tab_single, tab_batch, tab_fraud = st.tabs([
     "📌 Single Prediction & Explainability",
