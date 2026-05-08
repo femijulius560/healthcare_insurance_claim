@@ -97,6 +97,8 @@ Fraud review flow with flagged output and investigation views:
 
 The project uses healthcare insurance claim data with demographic and health variables.
 
+**Data Source:** [data.world/sumitrock/insurance](https://data.world/sumitrock/insurance)
+
 Core features:
 
 - age
