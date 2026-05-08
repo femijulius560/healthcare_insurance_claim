@@ -1,4 +1,4 @@
-# Insurance Claim Prediction and Fraud Analytics Dashboard
+# ClaimIQ: An Insurance Claim Prediction and Fraud Intelligence System
 
 ## Overview
 
@@ -10,7 +10,7 @@ This project combines machine learning claim prediction with an interactive Stre
 
 The model is a Random Forest pipeline with log-target handling and calibration logic to improve upper-tail claim estimates.
 
-**Live Demo:** https://fraudintelligence.streamlit.app/
+**Live Demo:** https://claimiq.streamlit.app/
 
 ## Dashboard Tabs
 
