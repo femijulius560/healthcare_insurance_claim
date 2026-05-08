@@ -46,6 +46,43 @@ def normalize_cat_cols(X):   # ensure consistent formatting for categorical colu
     return X
 
 
+def clean_uploaded_data(df):
+    required_cols = ["age", "bmi", "bloodpressure", "children", "gender", "smoker", "diabetic", "region"]
+
+    # Check for required columns
+    missing_cols = [c for c in required_cols if c not in df.columns]
+    if missing_cols:
+        return None, f"Missing required columns: {missing_cols}"
+
+    df_clean = df.copy()
+
+    # Drop rows with NaN in required columns
+    initial_count = len(df_clean)
+    df_clean = df_clean.dropna(subset=required_cols)
+    dropped_count = initial_count - len(df_clean)
+
+    # Normalize categorical columns (lowercase, strip whitespace)
+    df_clean = normalize_cat_cols(df_clean)
+
+    # Convert numeric columns to proper types
+    numeric_cols = ["age", "bmi", "bloodpressure", "children"]
+    for col in numeric_cols:
+        try:
+            df_clean[col] = pd.to_numeric(df_clean[col], errors="coerce")
+        except:
+            pass
+
+    # Ensure categorical values are strings
+    cat_cols = ["gender", "smoker", "diabetic", "region"]
+    for col in cat_cols:
+        df_clean[col] = df_clean[col].astype(str).str.lower().str.strip()
+
+    # Remove any new NaN introduced by numeric conversion
+    df_clean = df_clean.dropna(subset=numeric_cols)
+
+    return df_clean, f"Data cleaned: Removed {dropped_count} rows with missing values."
+
+
 def predict_claims_from_log_model(pipeline, features_df): # predict claims from log model, applying smearing factor if available.
     pred_log = pipeline.predict(features_df)
     smear_factor = getattr(pipeline, "smearing_factor_", 1.0)
@@ -378,6 +415,11 @@ with tab_batch:
 
     if uploaded_file is not None:
         df = pd.read_csv(uploaded_file)
+        df, clean_msg = clean_uploaded_data(df)
+        if df is None:
+            st.error(clean_msg)
+            st.stop()
+        st.info(clean_msg)
 
         high_claim_boost = st.slider(
             "High-Claim Boost",
@@ -603,6 +645,11 @@ with tab_fraud:
 
     if fraud_file is not None:
         fraud_df = pd.read_csv(fraud_file)
+        fraud_df, clean_msg = clean_uploaded_data(fraud_df)
+        if fraud_df is None:
+            st.error(clean_msg)
+            st.stop()
+        st.info(clean_msg)
         required_cols = ["age", "bmi", "bloodpressure", "children", "gender", "smoker", "diabetic", "region"]
         missing_cols = [c for c in required_cols if c not in fraud_df.columns]
 
