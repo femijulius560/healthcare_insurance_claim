@@ -751,5 +751,6 @@ st.markdown("""
 <div style='text-align: center; padding: 20px; color: #64748b; font-size: 14px;'>
     <p>ClaimIQ © 2026 | Insurance Claim Prediction & Fraud Intelligence System</p>
     <p style='margin-top: 10px; font-size: 12px;'>Powered by Random Forest ML | Built with Streamlit</p>
+    <p style='margin-top: 10px; font-size: 12px;'><a href='https://data.world/sumitrock/insurance' target='_blank' style='color: #64748b; text-decoration: none;'>Data Source: data.world/sumitrock/insurance</a></p>
 </div>
 """, unsafe_allow_html=True)
